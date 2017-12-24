@@ -95,6 +95,9 @@ void detect_dt_sensors() {
 
     LOG(LL_INFO, ("Num of sensors found on pin %i: %i\n",
           ow_config.pins[i], dt_buses[i].sensors_active));
+
+    if (dt_buses[i].sensors_active <= 0) continue;
+
     LOG(LL_INFO, ("Global resolution on pin %i: %i\n",
           dt_buses[i].ow_pin,
           mgos_arduino_dt_get_global_resolution(dt_buses[i].dt_bus)));
@@ -124,11 +127,16 @@ void detect_dt_sensors() {
 void get_temps() {
   float temp=0.0;
   for (int i = 0; i < ow_config.pin_count; i++) {
+    if (dt_buses[i].sensors_active <= 0) continue;
+
     mgos_arduino_dt_request_temperatures(dt_buses[i].dt_bus);
+
     LOG(LL_INFO, ("Retrieving temperatures from DT bus on pin %i\n", dt_buses[i].ow_pin));
+
     for (int j = 0; j < dt_buses[i].sensors_active; j++) {
       temp = mgos_arduino_dt_get_tempc(dt_buses[i].dt_bus, dt_buses[i].sensors[j].address) / 100.0;
       dt_buses[i].sensors[j].read_count++;
+
       if (temp == DEVICE_DISCONNECTED_C || temp == DEVICE_RESET_C) {
         LOG(LL_ERROR, ("Failed to read sensor"));
         dt_buses[i].sensors[j].error = temp;
@@ -144,6 +152,7 @@ void get_temps() {
 
 static void metrics_temperature_fn(struct mg_connection *nc, void *user_data) {
   get_temps();
+
   for (int i = 0; i < ow_config.pin_count; i++) {
     for (int j = 0; j < dt_buses[i].sensors_active; j++) {
       if (! dt_buses[i].sensors[j].error) {
@@ -206,8 +215,6 @@ void temp_request_timer_cb(void *arg) {
 }
 
 enum mgos_app_init_result mgos_app_init(void) {
-  LOG(LL_INFO, ("Arduino DallasTemperature library simple example\n"));
-
   ow_config.pins = (int*) malloc(sizeof(int) * ONEWIRE_PIN_COUNT_MAX);
   dt_buses = (TempBus*) malloc(sizeof(TempBus) * ONEWIRE_PIN_COUNT_MAX);
   for (int i = 0; i < ONEWIRE_PIN_COUNT_MAX; i++) {
