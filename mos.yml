@@ -32,6 +32,8 @@ config_schema:
   - ["onewire", "o", {"title": "OneWire Settings"}]
   - ["onewire.pin_count", "i", 3, {"title": "Number Of OneWire Pins To Use"}]
   - ["onewire.pins", "s", "2,4,5", {"title": "Pins To Scan For OneWire Devices"}]
+  - ["temperature", "o", {"title": "Temperature Sensor Settings"}]
+  - ["temperature.resolution", "i", 10, {"title": "Resolution Of Temperature Sensor Measurements"}]
 
 # List of libraries used by this app, in order of initialisation
 libs:

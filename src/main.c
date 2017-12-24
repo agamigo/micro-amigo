@@ -13,6 +13,7 @@
 typedef struct OWConfigs {
   int pin_count;
   int *pins;
+  int temp_resolution;
 } OWConfig;
 
 typedef struct TempSensors {
@@ -37,13 +38,14 @@ TempBus *dt_buses;
 
 void config_onewire() {
   int pin, idx = 0;
+  ow_config.temp_resolution = mgos_sys_config_get_temperature_resolution();
   ow_config.pin_count = mgos_sys_config_get_onewire_pin_count();
   const char *str_orig = mgos_sys_config_get_onewire_pins();
   char str[100];
   memset(str, '\0', sizeof(str));
   strcpy(str, str_orig);
-  char *t;
 
+  char *t;
   t = strtok(str,",");
   while (t != NULL) {
     if (idx >= ow_config.pin_count) {
@@ -68,8 +70,12 @@ void config_dt_buses() {
     dt_buses[i].ow_bus = mgos_arduino_onewire_create(ow_config.pins[i]);
     dt_buses[i].dt_bus = mgos_arduino_dt_create(dt_buses[i].ow_bus);
     mgos_arduino_dt_begin(dt_buses[i].dt_bus);
+    if (ow_config.temp_resolution != mgos_arduino_dt_get_global_resolution(dt_buses[i].dt_bus)) {
+      mgos_arduino_dt_set_global_resolution(dt_buses[i].dt_bus, ow_config.temp_resolution);
+    }
     dt_buses[i].is_active = true;
   }
+
   // Make sure remaining buffer of DallasTemperature buses are not active.
   // This cleans things up if pin_count is lowered.
   for (int i = ow_config.pin_count; i < ONEWIRE_PIN_COUNT_MAX; i++) {
@@ -82,18 +88,23 @@ void config_dt_buses() {
 
 void detect_dt_sensors() {
   static char *hex = "0123456789ABCDEF";
+
   // Loop through OneWire pins, detect DallasTemperature sensors
   for (int i = 0; i < ow_config.pin_count; i++) {
     dt_buses[i].sensors_active = mgos_arduino_dt_get_device_count(dt_buses[i].dt_bus);
 
     LOG(LL_INFO, ("Num of sensors found on pin %i: %i\n",
           ow_config.pins[i], dt_buses[i].sensors_active));
+    LOG(LL_INFO, ("Global resolution on pin %i: %i\n",
+          dt_buses[i].ow_pin,
+          mgos_arduino_dt_get_global_resolution(dt_buses[i].dt_bus)));
 
     for (int j = 0; j < dt_buses[i].sensors_active; j++) {
       if (mgos_arduino_dt_get_address(dt_buses[i].dt_bus,
             dt_buses[i].sensors[j].address, j)) {
         dt_buses[i].sensors[j].read_count = 0;
         dt_buses[i].sensors[j].error = false;
+
         LOG(LL_INFO, ("Sens#%d address: ", j + 1));
         int l = 0;
         for (int k = 0; k < 8; k++) {
@@ -115,7 +126,6 @@ void get_temps() {
   for (int i = 0; i < ow_config.pin_count; i++) {
     mgos_arduino_dt_request_temperatures(dt_buses[i].dt_bus);
     LOG(LL_INFO, ("Retrieving temperatures from DT bus on pin %i\n", dt_buses[i].ow_pin));
-    LOG(LL_INFO, ("Sensor count on pin %i is %i\n", dt_buses[i].ow_pin, dt_buses[i].sensors_active));
     for (int j = 0; j < dt_buses[i].sensors_active; j++) {
       temp = mgos_arduino_dt_get_tempc(dt_buses[i].dt_bus, dt_buses[i].sensors[j].address) / 100;
       dt_buses[i].sensors[j].read_count++;
