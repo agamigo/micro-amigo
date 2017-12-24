@@ -1,0 +1,51 @@
+author: bzub
+description: Multi-ds18b20 OneWire Temperature Sensor
+version: 0.0.3
+arch: esp8266
+
+libs_version: ${mos.version}
+modules_version: ${mos.version}
+mongoose_os_version: ${mos.version}
+
+# Optional. List of tags for online search.
+tags:
+  - c
+
+# List of files / directories with C sources. No slashes at the end of dir names.
+sources:
+  - src
+
+includes:
+  - include
+
+# List of dirs. Files from these dirs will be copied to the device filesystem
+filesystem:
+  - fs
+
+cdefs:
+  ARDUINO: 150
+#   ARDUINO_ARCH_ESP8266: 1
+
+config_schema:
+  - ["wifi.ap.enable", false]
+  - ["wifi.sta.enable", true]
+  - ["onewire", "o", {"title": "OneWire Settings"}]
+  - ["onewire.pin_count", "i", 3, {"title": "Number Of OneWire Pins To Use"}]
+  - ["onewire.pins", "s", "2,4,5", {"title": "Pins To Scan For OneWire Devices"}]
+
+# List of libraries used by this app, in order of initialisation
+libs:
+  - origin: https://github.com/mongoose-os-libs/ca-bundle
+  - origin: https://github.com/mongoose-os-libs/rpc-service-config
+  - origin: https://github.com/mongoose-os-libs/rpc-service-fs
+  - origin: https://github.com/mongoose-os-libs/rpc-uart
+  - origin: https://github.com/mongoose-os-libs/wifi
+  - origin: https://github.com/mongoose-os-libs/prometheus-metrics
+  - origin: https://github.com/mongoose-os-libs/ota-http-server
+  - origin: https://github.com/mongoose-os-libs/dash
+  - origin: https://github.com/mongoose-os-libs/arduino-compat
+  - origin: https://github.com/bzub/OneWire
+  - origin: https://github.com/bzub/Arduino-Temperature-Control-Library
+
+# Used by the mos tool to catch mos binaries incompatible with this file format
+manifest_version: 2017-05-18
