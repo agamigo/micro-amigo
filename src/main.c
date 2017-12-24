@@ -127,7 +127,7 @@ void get_temps() {
     mgos_arduino_dt_request_temperatures(dt_buses[i].dt_bus);
     LOG(LL_INFO, ("Retrieving temperatures from DT bus on pin %i\n", dt_buses[i].ow_pin));
     for (int j = 0; j < dt_buses[i].sensors_active; j++) {
-      temp = mgos_arduino_dt_get_tempc(dt_buses[i].dt_bus, dt_buses[i].sensors[j].address) / 100;
+      temp = mgos_arduino_dt_get_tempc(dt_buses[i].dt_bus, dt_buses[i].sensors[j].address) / 100.0;
       dt_buses[i].sensors[j].read_count++;
       if (temp == DEVICE_DISCONNECTED_C || temp == DEVICE_RESET_C) {
         LOG(LL_ERROR, ("Failed to read sensor"));
