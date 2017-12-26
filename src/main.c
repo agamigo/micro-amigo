@@ -137,15 +137,19 @@ void get_temps() {
       temp = mgos_arduino_dt_get_tempc(dt_buses[i].dt_bus, dt_buses[i].sensors[j].address) / 100.0;
       dt_buses[i].sensors[j].read_count++;
 
-      if (temp == DEVICE_DISCONNECTED_C || temp == DEVICE_RESET_C) {
+      if (temp <= DEVICE_DISCONNECTED_C + 1.0) {
         LOG(LL_ERROR, ("Failed to read sensor"));
-        dt_buses[i].sensors[j].error = temp;
+        dt_buses[i].sensors[j].error = DEVICE_DISCONNECTED_C;
+        continue;
       }
-      else {
-        LOG(LL_INFO, ("Sens#%d temperature: %f *C\n", i + 1, temp));
-        dt_buses[i].sensors[j].error = false;
-        dt_buses[i].sensors[j].temp = temp;
+      if (temp >= DEVICE_RESET_C - 1.0) {
+        LOG(LL_ERROR, ("Failed to read sensor"));
+        dt_buses[i].sensors[j].error = DEVICE_RESET_C;
+        continue;
       }
+      LOG(LL_INFO, ("Sens#%d temperature: %f *C\n", i + 1, temp));
+      dt_buses[i].sensors[j].error = false;
+      dt_buses[i].sensors[j].temp = temp;
     }
   }
 }
